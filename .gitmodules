@@ -1,0 +1,6 @@
+[submodule "bosh-lite"]
+	path = bosh-lite
+	url = https://github.com/cloudfoundry/bosh-lite
+[submodule "cf-release"]
+	path = cf-release
+	url = https://github.com/cloudfoundry/cf-release
