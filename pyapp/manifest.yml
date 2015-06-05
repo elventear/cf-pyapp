@@ -1,0 +1,6 @@
+---
+applications:
+  - name: request-logger
+    buildpack: https://github.com/cloudfoundry/buildpack-python.git
+    env:
+      APP_DEBUG: false
