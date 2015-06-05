@@ -1,7 +1,9 @@
 import os
-import json
 
-from flask import Flask
+import postgresql
+from flask import Flask, request, json, Response
+
+MIME_JSON = 'application/json'
 
 APP = Flask(__name__)
 
@@ -11,7 +13,17 @@ def hello():
 
 @APP.route("/services")
 def services():
-    return json.dumps(SERVICES, sort_keys=True, indent=4)
+    return Response(json.dumps(SERVICES, sort_keys=True, indent=4), 
+            mimetype=MIME_JSON)
+
+@APP.route("/headers")
+def headers():
+    return Response(json.dumps(dict(request.headers), sort_keys=True, indent=4), 
+            mimetype=MIME_JSON)
+
+@APP.route("/request")
+def request_():
+    return request.remote_ip
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
