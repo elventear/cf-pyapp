@@ -1,5 +1,8 @@
 import os
+import datetime
+import socket
 
+import pytz
 import postgresql
 from flask import Flask, request, json, Response
 
@@ -9,9 +12,12 @@ SERVICES = {}
 
 APP = Flask(__name__)
 
+def now():
+    return datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
+
 @APP.route("/")
 def hello():
-    return "Hello World!"
+    return str(dir(request))
 
 @APP.route("/services")
 def services():
@@ -25,7 +31,28 @@ def headers():
 
 @APP.route("/request")
 def request_():
-    return request.remote_ip
+    #return str(request.environ.keys())
+    raise Exception
+    return request.date
+    return str(dir(request))
+
+@APP.route("/log", methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
+def log_access():
+    db = connect_db()
+
+    e = request.environ
+    
+    LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
+
+    db.query("""
+        INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
+            http_method, http_path, http_query, user_agent) 
+        VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
+    """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
+        int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
+    )
+
+    return '' 
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
@@ -50,24 +77,30 @@ def init_database():
     db = connect_db()
 
     if db is None:
+        print('Database is not found')
         return
 
     if tables_missing(db):
         print('Creating DB schema')
-        db.execute("""CREATE TYPE http_method AS ENUM (
-                'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT')""")
-        db.execute("""
-            CREATE TABLE pyapp_log (
-                id integer  PRIMARY KEY,
-                time timestamptz NOT NULL,
-                src_ip inet NOT NULL ,
-                src_post integer NOT NULL,
-                dst_ip inet NOT NULL,
-                dst_port integer NOT NULL,
-                http_method http_method NOT NULL,
-                http_path text NOT NULL
-            )
-        """)
+        with db.xact():
+            db.execute("""CREATE TYPE http_method AS ENUM (
+                    'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT')""")
+            db.execute("""
+                CREATE TABLE pyapp_log (
+                    id SERIAL PRIMARY KEY,
+                    time timestamptz NOT NULL,
+                    src_ip inet NOT NULL ,
+                    src_port integer NOT NULL,
+                    dst_ip inet NOT NULL,
+                    dst_port integer NOT NULL,
+                    http_method http_method NOT NULL,
+                    http_path text NOT NULL,
+                    http_query text NOT NULL,
+                    user_agent text NOT NULL
+                )
+            """)
+    else:
+        print('DB schema is up to date')
         
 
 
