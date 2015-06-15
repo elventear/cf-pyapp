@@ -1,6 +1,7 @@
 import os
 import datetime
 import socket
+import functools 
 
 import pytz
 import postgresql
@@ -15,44 +16,34 @@ APP = Flask(__name__)
 def now():
     return datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
 
-@APP.route("/")
-def hello():
-    return str(dir(request))
+def log_access(f):
 
-@APP.route("/services")
-def services():
-    return Response(json.dumps(SERVICES, sort_keys=True, indent=4), 
-            mimetype=MIME_JSON)
+    @functools.wraps(f)
+    def w(*a, **kw):
+        db = connect_db()
 
-@APP.route("/headers")
-def headers():
-    return Response(json.dumps(dict(request.headers), sort_keys=True, indent=4), 
-            mimetype=MIME_JSON)
+        e = request.environ
+        
+        LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
 
-@APP.route("/request")
-def request_():
-    #return str(request.environ.keys())
-    raise Exception
-    return request.date
-    return str(dir(request))
+        db.query("""
+            INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
+                http_method, http_path, http_query, user_agent) 
+            VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
+        """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
+            int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
+        )
+        
+        return f(*a, **kw)
 
-@APP.route("/log", methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
-def log_access():
-    db = connect_db()
+    return w
 
-    e = request.environ
-    
-    LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
 
-    db.query("""
-        INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
-            http_method, http_path, http_query, user_agent) 
-        VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
-    """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
-        int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
-    )
-
-    return '' 
+@APP.route('/', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'], defaults={'path': ''})
+@APP.route('/<path:path>', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
+@log_access
+def hello(path):
+    return 'Hello World' 
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
