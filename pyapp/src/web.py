@@ -2,11 +2,14 @@ import os
 import datetime
 import socket
 import functools 
+import random
+import uuid
 
 import pytz
 import postgresql
-from flask import Flask, request, json, Response
+from flask import Flask, request, json, Response, redirect
 
+MAX_DEPTH = 10
 MIME_JSON = 'application/json'
 
 SERVICES = {}
@@ -42,8 +45,17 @@ def log_access(f):
 @APP.route('/', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'], defaults={'path': ''})
 @APP.route('/<path:path>', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
 @log_access
-def hello(path):
-    return 'Hello World' 
+def loop(path):
+    if len(path.split('/')) >= MAX_DEPTH:
+        return redirect('/end', code=302) 
+    level = ''.join(random.SystemRandom().sample(uuid.uuid4().hex, 10))
+    next_level = '/'.join([path, level])
+    return redirect(next_level, code=302)
+
+@APP.route('/end', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
+@log_access
+def end():
+    return 'a'
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
