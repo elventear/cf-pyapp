@@ -19,26 +19,20 @@ APP = Flask(__name__)
 
 class LogTable(Table):
     time = Col('Time')
-    src_ip = Col('Source IP')
-    src_port = Col('Source IP')
-    dst_ip = Col('Source IP')
-    dst_port = Col('Source IP')
-    http_method = Col('Source IP')
-    http_path = Col('Source IP')
-    http_query = Col('Source IP')
-    user_agent = Col('Source IP')
+    src = Col('Source')
+    dst = Col('Destination')
+    http_method = Col('Method')
+    http_path = Col('Path')
+    user_agent = Col('User Agent')
 
 class Log:
     def __init__(self, time, src_ip, src_port, dst_ip, dst_port, 
-            http_method, http_path, http_query, user_agent):
+            http_method, http_path, user_agent):
         self.time = time
-        self.src_ip = src_ip
-        self.src_port = src_port
-        self.dst_ip = dst_ip
-        self.dst_port = dst_port
+        self.src = '{0}:{1}'.format(src_ip, src_port)
+        self.dst = '{0}:{1}'.format(dst_ip, dst_port)
         self.http_method = http_method
         self.http_path = http_path
-        self.http_query = http_query
         self.user_agent = user_agent
 
 def now():
@@ -89,7 +83,7 @@ def logs():
 
     ps = db.prepare("""
         SELECT time, src_ip, src_port, dst_ip, dst_port, 
-            http_method, http_path, http_query, user_agent
+            http_method, http_path, user_agent
         FROM pyapp_log
         ORDER BY time DESC
         LIMIT 100
@@ -143,6 +137,7 @@ def init_database():
                     user_agent text NOT NULL
                 )
             """)
+            db.execute("""CREATE INDEX pyapp_log_time_idx ON pyapp_log (time DESC)""")
     else:
         print('DB schema is up to date')
         
