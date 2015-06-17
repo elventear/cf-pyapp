@@ -23,4 +23,4 @@ if [ ! -z $NEWINIT ]; then
     createdb -O $DBUSER $DBNAME
 fi
 
-echo "VCAP_SERVICES='{\"database\": [{\"name\": \"myinstance\",\"credentials\": {\"uri\": \"postgres://$DBUSER:$DBNAME@localhost:5432/$DBNAME\"}}]}'; export VCAP_SERVICES"
+echo "VCAP_SERVICES='{\"postgresql\": [{\"name\": \"myinstance\",\"credentials\": {\"uri\": \"postgres://$DBUSER:$DBNAME@localhost:5432/$DBNAME\"}}]}'; export VCAP_SERVICES"

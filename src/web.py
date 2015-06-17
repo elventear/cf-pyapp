@@ -14,6 +14,7 @@ MAX_DEPTH = 10
 MIME_JSON = 'application/json'
 
 SERVICES = {}
+DB_URI = None
 
 APP = Flask(__name__)
 
@@ -44,17 +45,18 @@ def log_access(f):
     def w(*a, **kw):
         db = connect_db()
 
-        e = request.environ
-        
-        LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
+        if db is not None:
+            e = request.environ
+            
+            LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
 
-        db.query("""
-            INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
-                http_method, http_path, http_query, user_agent) 
-            VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
-        """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
-            int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
-        )
+            db.query("""
+                INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
+                    http_method, http_path, http_query, user_agent) 
+                VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
+            """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
+                int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
+            )
         
         return f(*a, **kw)
 
@@ -106,15 +108,21 @@ def get_env_config(key, default_val=None, val_type=lambda x: x):
     return val_type(os.environ[key])
 
 def connect_db():
-    try:
-        uri = SERVICES['database'][0]['credentials']['uri']
-    except (KeyError, IndexError):
-        return None
+    global DB_URI
 
-    if uri.startswith('postgres://'):
-        uri = uri.replace('postgres://', 'pq://')
-        return postgresql.open(uri)
+    if DB_URI is None:
+        for k in SERVICES:
+            if k.startswith('postgresql'):
+                try:
+                    uri = SERVICES[k][0]['credentials']['uri']
+                except (KeyError, IndexError):
+                    continue
 
+                if uri.startswith('postgres://'):
+                    DB_URI = uri.replace('postgres://', 'pq://')
+                    return postgresql.open(DB_URI)
+    else:
+        return postgresql.open(DB_URI)
 
 def tables_missing(db):
     return db.query("SELECT count(*) FROM information_schema.tables WHERE table_name = 'pyapp_log'",)[0][0] == 0
