@@ -94,6 +94,11 @@ def logs():
 
     return LogTable(Log(*x) for x in ps).__html__()
 
+@APP.route('/services')
+@log_access
+def dump_services():
+    return json.dumps(SERVICES, sort_keys=True, indent=4)
+
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
