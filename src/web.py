@@ -97,7 +97,7 @@ def logs():
 @APP.route('/services')
 @log_access
 def dump_services():
-    return json.dumps(SERVICES, sort_keys=True, indent=4)
+    return Response(json.dumps(SERVICES, sort_keys=True, indent=4), mimetype='application/json')
 
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
