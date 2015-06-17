@@ -8,7 +8,7 @@ Vising any path served by the server will trigger a redirect to a new path that 
 When the path reaches a certain depth (10), it will redirect to `/end` and stop redirecting. Any access to the server
 will be saved in a database.
 
-To view the logs visit `/logs`. Only the last 100 access will be returned.
+To view the logs visit `/logs`. Only the last 100 accesses will be returned.
 
 ## Development
 
@@ -20,13 +20,13 @@ To view the logs visit `/logs`. Only the last 100 access will be returned.
 
 ### Init enviroment
 
-	> virtualenv .venv
-	> source .env
-	> pip install -r src/requirements.txt
-        > eval $(./scripts/run_pg.sh)
+    > virtualenv .venv
+    > source .env
+    > pip install -r src/requirements.txt
+    > eval $(./scripts/run_pg.sh)
 
 ### Usage
 
-        > python src/web.py
+    > python src/web.py
 
 
