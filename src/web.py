@@ -82,11 +82,14 @@ def logs():
     db = connect_db()
 
     ps = db.prepare("""
-        SELECT time, src_ip, src_port, dst_ip, dst_port, 
-            http_method, http_path, user_agent
-        FROM pyapp_log
-        ORDER BY time DESC
-        LIMIT 100
+        SELECT * 
+        FROM
+            (SELECT time, src_ip, src_port, dst_ip, dst_port, 
+                http_method, http_path, user_agent
+            FROM pyapp_log
+            ORDER BY time DESC
+            LIMIT 100) AS a
+        ORDER BY time ASC
     """)
 
     return LogTable(Log(*x) for x in ps).__html__()

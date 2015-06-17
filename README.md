@@ -1,34 +1,32 @@
-# cloudfoundry-lite
+# cf txn demo app
 
-Integrated enviroment to deploy the AppFirst collector on a bosh-lite Cloud Foundry deploy.
+Simple web app that logs each access to a database
 
-## Requirements
+## Features
 
-* Ruby 2.1
-* [go](https://golang.org/)
-* [Vagrant](https://www.vagrantup.com/) >= 1.6.3 
-* [Virtualbox](https://www.virtualbox.org/) 
+Vising any path served by the server will trigger a redirect to a new path that is deeper than the original request.
+When the path reaches a certain depth (10), it will redirect to `/end` and stop redirecting. Any access to the server
+will be saved in a database.
 
-## Init enviroment
+To view the logs visit `/logs`. Only the last 100 access will be returned.
 
-	> git submodule update --init
+## Development
+
+### Requirements
+
+* Python 3.4
+* virtualenv
+- postgresql
+
+### Init enviroment
+
+	> virtualenv .venv
 	> source .env
-	> go get github.com/cloudfoundry-incubator/spiff
-	> gem install bosh_cli
+	> pip install -r src/requirements.txt
+        > eval $(./scripts/run_pg.sh)
 
-## Deploy CF
+### Usage
 
-	> cd bosh-lite
-	> vagrant up
-	> ./bin/provision_cf 
-        > ./bin/add-route
+        > python src/web.py
 
-## Login to CF
-
-        > cf api --skip-ssl-validation https://api.10.244.0.34.xip.io
-        > cf auth admin admin
-        > cf create-org me
-        > cf target -o me
-        > cf create-space development
-        > cf target -s development
 
