@@ -82,10 +82,21 @@ def loop(path):
 def end():
     return 'You are done'
 
-@APP.router('/logs')
+@APP.route('/logs')
 @log_access
 def logs():
     db = connect_db()
+
+    ps = db.prepare("""
+        SELECT time, src_ip, src_port, dst_ip, dst_port, 
+            http_method, http_path, http_query, user_agent
+        FROM pyapp_log
+        ORDER BY time DESC
+        LIMIT 100
+    """)
+
+    return LogTable(Log(*x) for x in ps).__html__()
+
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
