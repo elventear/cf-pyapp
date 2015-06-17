@@ -8,6 +8,7 @@ import uuid
 import pytz
 import postgresql
 from flask import Flask, request, json, Response, redirect
+from flask_table import Table, Col
 
 MAX_DEPTH = 10
 MIME_JSON = 'application/json'
@@ -15,6 +16,30 @@ MIME_JSON = 'application/json'
 SERVICES = {}
 
 APP = Flask(__name__)
+
+class LogTable(Table):
+    time = Col('Time')
+    src_ip = Col('Source IP')
+    src_port = Col('Source IP')
+    dst_ip = Col('Source IP')
+    dst_port = Col('Source IP')
+    http_method = Col('Source IP')
+    http_path = Col('Source IP')
+    http_query = Col('Source IP')
+    user_agent = Col('Source IP')
+
+class Log:
+    def __init__(self, time, src_ip, src_port, dst_ip, dst_port, 
+            http_method, http_path, http_query, user_agent):
+        self.time = time
+        self.src_ip = src_ip
+        self.src_port = src_port
+        self.dst_ip = dst_ip
+        self.dst_port = dst_port
+        self.http_method = http_method
+        self.http_path = http_path
+        self.http_query = http_query
+        self.user_agent = user_agent
 
 def now():
     return datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
@@ -55,7 +80,12 @@ def loop(path):
 @APP.route('/end', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
 @log_access
 def end():
-    return 'a'
+    return 'You are done'
+
+@APP.router('/logs')
+@log_access
+def logs():
+    db = connect_db()
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
