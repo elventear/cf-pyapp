@@ -29,4 +29,24 @@ To view the logs visit `/logs`. Only the last 100 accesses will be returned.
 
     > python src/web.py
 
+## Cloud Foundry Deployment
+
+    > cf create-service postgresql default my-postgresql
+    > cd src
+    > cf push
+    > cf bind-service request-logger my-postgresql
+    > cf restage request-logger
+
+## Accessing the Application
+
+To log a series of requests:
+
+    > curl -L -X POST http://request-logger.example.domain.com
+
+Any HTTP method is accepted. 
+
+To view the logs visit `http://request-logger.example.domain.com/logs`.
+
+    
+
 
