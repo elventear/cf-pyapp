@@ -7,6 +7,7 @@ import uuid
 
 import pytz
 import postgresql
+import postgresql.exceptions
 from flask import Flask, request, json, Response, redirect
 from flask_table import Table, Col
 
@@ -130,7 +131,11 @@ def read_db_info():
 
 def connect_db():
     if DB_URI is not None:
-        return postgresql.open(DB_URI)
+        try:
+            return postgresql.open(DB_URI)
+        except postgresql.exceptions.ClientCannotConnectError:
+            print('Unable to connect to', DB_URI)
+            return
 
 def tables_missing(db):
     return db.query("SELECT count(*) FROM information_schema.tables WHERE table_name = 'pyapp_log'",)[0][0] == 0
