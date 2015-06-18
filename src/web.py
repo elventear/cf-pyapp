@@ -96,10 +96,16 @@ def logs():
 
     return LogTable(Log(*x) for x in ps).__html__()
 
-@APP.route('/services')
+@APP.route('/env')
 @log_access
 def dump_services():
-    return Response(json.dumps(SERVICES, sort_keys=True, indent=4), mimetype='application/json')
+    env = {
+            'VCAP_SERVICES': SERVICES,
+            'APP_DEBUG': DEBUG,
+            'VCAP_APP_HOST': HOST,
+            'PORT': PORT
+            }
+    return Response(json.dumps(env, sort_keys=True, indent=4), mimetype='application/json')
 
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
@@ -107,7 +113,7 @@ def get_env_config(key, default_val=None, val_type=lambda x: x):
         return default_val
     return val_type(os.environ[key])
 
-def connect_db():
+def read_db_info():
     global DB_URI
 
     if DB_URI is None:
@@ -120,8 +126,10 @@ def connect_db():
 
                 if uri.startswith('postgres://'):
                     DB_URI = uri.replace('postgres://', 'pq://')
-                    return postgresql.open(DB_URI)
-    else:
+                    return
+
+def connect_db():
+    if DB_URI is not None:
         return postgresql.open(DB_URI)
 
 def tables_missing(db):
@@ -161,8 +169,11 @@ def init_database():
 
 if __name__ == "__main__":
     SERVICES = get_env_config('VCAP_SERVICES', val_type=json.loads, default_val={})
+    HOST = get_env_config('VCAP_APP_HOST')
+    PORT = get_env_config('PORT', val_type=int)
+    DEBUG = get_env_config('APP_DEBUG', default_val=False, val_type=bool)
 
+    read_db_info()
     init_database()
 
-    APP.run(host=get_env_config('VCAP_APP_HOST'), port=get_env_config('PORT', val_type=int), 
-            debug=get_env_config('APP_DEBUG', default_val=False, val_type=bool))
+    APP.run(host=HOST, port=PORT, debug=DEBUG)
