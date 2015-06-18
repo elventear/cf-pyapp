@@ -48,22 +48,20 @@ def log_access(f):
 
     @functools.wraps(f)
     def w(*a, **kw):
-        if DB_POOL is None:
-            return
+        if DB_POOL is not None:
+            with DB_POOL() as db:
+                e = request.environ
+                
+                LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
 
-        with DB_POOL() as db:
-            e = request.environ
+                db.query("""
+                    INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
+                        http_method, http_path, http_query, user_agent) 
+                    VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
+                """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
+                    int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
+                )
             
-            LOCAL_ADDR = socket.gethostbyname(e['HTTP_HOST'].replace(':%s' % e['SERVER_PORT'], ''))
-
-            db.query("""
-                INSERT INTO pyapp_log(time, src_ip, src_port, dst_ip, dst_port, 
-                    http_method, http_path, http_query, user_agent) 
-                VALUES ($1, ($2 || '/32')::inet, $3, ($4 || '/32')::inet, $5, $6, $7, $8, $9)
-            """, now(), e['REMOTE_ADDR'], int(e['REMOTE_PORT']), LOCAL_ADDR, 
-                int(e['SERVER_PORT']), request.method, e['PATH_INFO'], e['QUERY_STRING'], e['HTTP_USER_AGENT']
-            )
-        
         return f(*a, **kw)
 
     return w
