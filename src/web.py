@@ -163,11 +163,19 @@ def read_db_info():
 
                 if uri.startswith('postgres://'):
                     db_uri = uri.replace('postgres://', 'pq://')
-                    DB_POOL = new_pool(lambda: postgresql.open(db_uri), 20)
+                    print('db_uri', db_uri)
+                    DB_POOL = pool(lambda: postgresql.open(db_uri), 20)
                     return
 
+    print('could not find db info')
+
 def tables_missing(db):
-    return db.query("SELECT count(*) FROM information_schema.tables WHERE table_name = 'pyapp_log'",)[0][0] == 0
+    if db.query("SELECT count(*) FROM information_schema.tables WHERE table_name = 'pyapp_log'",)[0][0] == 0:
+        print('tables missing')
+        return True
+    print('tables founds') 
+    return False
+
 
 def init_database():
     if DB_POOL is None:
