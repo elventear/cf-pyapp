@@ -113,8 +113,13 @@ def dump_services():
 
 def get_env_config(key, default_val=None, val_type=lambda x: x):
     if key not in os.environ:
+        print(key, 'not found in enviroment')
         return default_val
-    return val_type(os.environ[key])
+
+    val = os.environ[key] 
+    print(key, 'found in enviroment')
+    print(val)
+    return val_type(val)
 
 # http://stackoverflow.com/questions/98687/what-is-the-best-solution-for-database-connection-pooling-in-python
 def pool(ctor, limit=None):
