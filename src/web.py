@@ -117,8 +117,7 @@ def get_env_config(key, default_val=None, val_type=lambda x: x):
         return default_val
 
     val = os.environ[key] 
-    print(key, 'found in enviroment')
-    print(val)
+    print(key, 'found in enviroment', val)
     return val_type(val)
 
 # http://stackoverflow.com/questions/98687/what-is-the-best-solution-for-database-connection-pooling-in-python
@@ -136,6 +135,21 @@ def pool(ctor, limit=None):
         lpool.put(i)
     return pooled
 
+def new_pool(ctor, limit):
+    local_pool = queue.Queue()
+    for i in range(limit):
+        local_pool.put_nowait(ctor())
+
+    @contextlib.contextmanager
+    def pooled():
+        i = local_pool.get()
+        yield i
+        local_pool.put_nowait(i)
+
+    return pooled
+
+    
+
 def read_db_info():
     global DB_POOL
 
@@ -149,7 +163,7 @@ def read_db_info():
 
                 if uri.startswith('postgres://'):
                     db_uri = uri.replace('postgres://', 'pq://')
-                    DB_POOL = pool(lambda: postgresql.open(db_uri), 20)
+                    DB_POOL = new_pool(lambda: postgresql.open(db_uri), 20)
                     return
 
 def tables_missing(db):
@@ -187,12 +201,16 @@ def init_database():
 
 
 if __name__ == "__main__":
+    print('request-logger startup')
+
     SERVICES = get_env_config('VCAP_SERVICES', val_type=json.loads, default_val={})
     HOST = get_env_config('VCAP_APP_HOST')
     PORT = get_env_config('PORT', val_type=int)
     DEBUG = get_env_config('APP_DEBUG', default_val=False, val_type=bool)
 
+    
     read_db_info()
     init_database()
 
+    print('start web app')
     APP.run(host=HOST, port=PORT, debug=DEBUG)
