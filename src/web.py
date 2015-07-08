@@ -120,35 +120,28 @@ def get_env_config(key, default_val=None, val_type=lambda x: x):
     print(key, 'found in enviroment', val)
     return val_type(val)
 
-# http://stackoverflow.com/questions/98687/what-is-the-best-solution-for-database-connection-pooling-in-python
-def pool(ctor, limit=None):
+def pool(ctor, limit):
     local_pool = queue.Queue()
-    n = multiprocessing.Value('i', 0)
-    @contextlib.contextmanager
-    def pooled(ctor=ctor, lpool=local_pool, n=n):
-        # block iff at limit
-        try: i = lpool.get(limit and n.value >= limit)
-        except queue.Empty:
-            n.value += 1
-            i = ctor()
-        yield i
-        lpool.put(i)
-    return pooled
-
-def new_pool(ctor, limit):
-    local_pool = queue.Queue()
-    for i in range(limit):
-        local_pool.put_nowait(ctor())
+    n = 0
 
     @contextlib.contextmanager
     def pooled():
-        i = local_pool.get()
+        nonlocal n
+        
+        if n < limit:
+            try:
+                i = local_pool.get_nowait()
+            except queue.Empty:
+                i = ctor()
+                n += 1
+        else:
+            i = local_pool.get()
+        
         yield i
+        
         local_pool.put_nowait(i)
 
     return pooled
-
-    
 
 def read_db_info():
     global DB_POOL
@@ -214,7 +207,7 @@ if __name__ == "__main__":
     SERVICES = get_env_config('VCAP_SERVICES', val_type=json.loads, default_val={})
     HOST = get_env_config('VCAP_APP_HOST')
     PORT = get_env_config('PORT', val_type=int)
-    DEBUG = get_env_config('APP_DEBUG', default_val=False, val_type=bool)
+    DEBUG = get_env_config('APP_DEBUG', default_val=False, val_type=lambda x: x == 'true')
 
     
     read_db_info()
