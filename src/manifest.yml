@@ -2,8 +2,8 @@
 applications:
   - name: request-logger
     buildpack: https://github.com/cloudfoundry/buildpack-python.git
-    disk_quota: 3G
-    instances: 1 
-    memory: 3G  
+    memory: 200M
+    disk_quota: 200M
+    instances: 5 
     env:
       APP_DEBUG: false
