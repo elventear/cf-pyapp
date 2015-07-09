@@ -1,4 +1,4 @@
-# cf txn demo app
+#  Cloud Foundry Demo Web App
 
 Simple web app that logs each access to a database
 
