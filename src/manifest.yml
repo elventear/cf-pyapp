@@ -1,9 +1,9 @@
 ---
 applications:
   - name: request-logger
-    buildpack: https://github.com/cloudfoundry/buildpack-python.git
-    memory: 200M
-    disk_quota: 200M
-    instances: 5 
+    buildpack: https://github.com/ddollar/heroku-buildpack-multi.git
+    memory: 1G
+    disk_quota: 1G
+    instances: 1 
     env:
       APP_DEBUG: false
