@@ -14,7 +14,7 @@ To view the logs visit `/logs`. Only the last 100 accesses will be returned.
 
 ### Requirements
 
-* Python 3.4
+* Python 3.5
 * virtualenv
 - postgresql
 
