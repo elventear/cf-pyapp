@@ -13,6 +13,7 @@ from flask import Flask, request, json, Response, redirect
 from flask_table import Table, Col
 
 import orm
+from orm import HTTP_METHODS
 
 MAX_DEPTH = 10
 MIME_JSON = 'application/json'
@@ -52,8 +53,8 @@ def log_access(f):
     return w
 
 
-@APP.route('/', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'], defaults={'path': ''})
-@APP.route('/<path:path>', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
+@APP.route('/', methods=HTTP_METHODS, defaults={'path': ''})
+@APP.route('/<path:path>', methods=HTTP_METHODS)
 @log_access
 def loop(path):
     if len(path.split('/')) >= MAX_DEPTH:
@@ -62,7 +63,7 @@ def loop(path):
     next_level = '/'.join([path, level])
     return redirect(next_level, code=302)
 
-@APP.route('/end', methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
+@APP.route('/end', methods=HTTP_METHODS)
 @log_access
 def end():
     return 'You are done'
