@@ -17,10 +17,6 @@ import orm
 MAX_DEPTH = 10
 MIME_JSON = 'application/json'
 
-SERVICES = {}
-
-DB_POOL = None
-
 APP = Flask(__name__)
 
 class LogTable(Table):
@@ -30,16 +26,6 @@ class LogTable(Table):
     http_method = Col('Method')
     http_path = Col('Path')
     user_agent = Col('User Agent')
-
-class Log:
-    def __init__(self, time, src_ip, src_port, dst_ip, dst_port, 
-            http_method, http_path, user_agent):
-        self.time = time
-        self.src = '{0}:{1}'.format(src_ip, src_port)
-        self.dst = '{0}:{1}'.format(dst_ip, dst_port)
-        self.http_method = http_method
-        self.http_path = http_path
-        self.user_agent = user_agent
 
 def now():
     return datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
